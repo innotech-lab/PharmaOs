@@ -1,211 +1,64 @@
 # PharmaOS
 
-**La plateforme de gestion de pharmacie, de bout en bout.**
+PharmaOS est une plateforme de gestion d’officine : produits, stock, ventes, fournisseurs, équipe et pilotage multi-pharmacies.
 
-PharmaOS est un système d’exploitation métier pour pharmacies modernes : caisse, stock, catalogue, fournisseurs, équipe et pilotage — dans une seule plateforme multi-tenant, sécurisée et pensée pour le terrain.
+> **État actuel : interface web sans données métier.** Le frontend fonctionne en local. L’API NestJS, Prisma, la base de données et les contrats partagés sont encore des squelettes vides. Les écrans et formulaires sont prêts à être branchés ; les créations de produits/fournisseurs restent temporaires en mémoire. L’authentification n’est pas connectée. L’application n’est pas prête pour des données réelles.
 
-[![Status](https://img.shields.io/badge/status-MVP%20en%20construction-amber)](#)
-[![Stack](https://img.shields.io/badge/stack-NestJS%20%7C%20Next.js%20%7C%20Prisma-0A7C66)](#stack-technique)
-[![License](https://img.shields.io/badge/license-Proprietary-slate)](#)
-[![Repo](https://img.shields.io/badge/github-innotech--lab%2FPharmaOs-181717?logo=github)](https://github.com/innotech-lab/PharmaOs)
+## Démarrer l’interface
 
----
+Prérequis : Node.js 20.9 ou plus récent et npm.
 
-## Vision
-
-Les pharmacies jonglent encore entre cahiers, Excel, logiciels fragmentés et outils de caisse isolés.  
-**PharmaOS unifie l’opérationnel** : du rayon à la caisse, du fournisseur au tableau de bord.
-
-| Pour qui | Ce que PharmaOS change |
-|----------|-------------------------|
-| **Titulaires / owners** | Visibilité CA, stock, équipe — multi-sites |
-| **Managers** | Catalogue, inventaire, fournisseurs sous contrôle |
-| **Caissiers** | Encaissement rapide, fiable, traçable |
-| **Réseaux / groupes** | Isolation multi-tenant, une plateforme, N pharmacies |
-
----
-
-## Fonctionnalités
-
-### Cœur métier
-
-| Module | Capacité |
-|--------|----------|
-| **Authentification & accès** | Inscription organisation, JWT + refresh, rôles `OWNER` · `MANAGER` · `CASHIER` |
-| **Multi-tenant / multi-pharmacies** | Une organisation, plusieurs officines, données isolées |
-| **Catalogue produits** | SKU, prix, TVA, activation, seuils d’alerte |
-| **Inventaire** | Niveaux de stock, mouvements `IN` / `OUT` / `ADJUST`, historique |
-| **Point de vente (POS)** | Recherche produit, panier, TVA, paiement espèces/carte, ticket |
-| **Fournisseurs** | Annuaire et suivi des partenaires d’approvisionnement |
-| **Équipe** | Invitation utilisateurs, droits par rôle |
-| **Pilotage** | CA du jour, top produits, alertes stock bas |
-
-### Principes produit
-
-- **MVP démontrable** avant features secondaires  
-- **Isolation stricte** tenant / pharmacie  
-- **Transaction atomique** vente → déstockage (pas de stock fantôme)  
-- **Contrats partagés** (`shared/`) entre API et front — une seule source de vérité  
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Clients                               │
-│              Next.js  ·  App Router  ·  :3000                 │
-└────────────────────────────┬────────────────────────────────┘
-                             │  HTTPS / JSON
-                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     API NestJS  ·  :3001                      │
-│  Auth · Users · Tenants · Pharmacies · Products · Inventory │
-│              Sales · Suppliers · Reports                     │
-└─────────────┬───────────────────────────────┬───────────────┘
-              │                               │
-              ▼                               ▼
-       PostgreSQL                      Redis (prévu)
-         Prisma
+```powershell
+cd web
+npm ci
+npm run dev
 ```
 
-```
-PharmaOS/
-├── api/                 # Backend NestJS + Prisma
-│   ├── prisma/          # Schema & migrations
-│   └── src/modules/     # Domaines métier
-├── web/                 # Frontend Next.js (App Router)
-│   ├── app/(auth)/      # Login / Register
-│   ├── app/(dashboard)/ # POS, stock, reports…
-│   └── lib/             # Client API
-├── shared/              # Types & validators (Zod) partagés
-└── docs/team/           # Briefs livraison par développeur
+Ouvrir [http://localhost:3000](http://localhost:3000). Aucun compte ni serveur API n’est requis pour parcourir la démo.
+
+Commandes disponibles depuis `web/` :
+
+```powershell
+npm run dev        # serveur local
+npm run typecheck  # vérification TypeScript
+npm run build      # compilation de production
+npm run start      # serveur de production après le build
 ```
 
----
+`web/.env.example` indique l’URL API prévue (`NEXT_PUBLIC_API_URL`). Le client API n’est pas encore implémenté ; cette variable n’est donc pas requise pour la démo actuelle.
 
-## Stack technique
+## Documentation
 
-| Couche | Technologie |
-|--------|-------------|
-| Frontend | **Next.js** (App Router), TypeScript |
-| Backend | **NestJS**, TypeScript |
-| ORM / DB | **Prisma** · **PostgreSQL** |
-| Contrats | Package **`shared/`** (types + validators Zod) |
-| Auth | **JWT** + refresh token |
-| Cache | **Redis** (prévu ; hors chemin critique MVP) |
-| Infra locale | Docker Compose (Postgres) |
+- [Démarrage et conventions d’équipe](docs/DEVELOPMENT.md)
+- [Architecture actuelle et cible](docs/ARCHITECTURE.md)
+- [État des livrables](docs/STATUS.md)
+- [Contrats métier et décisions ouvertes](docs/CONTRACTS.md)
+- [Briefs par personne](docs/team/)
 
----
+## Organisation du dépôt
 
-## Démarrage rapide
+| Dossier | Rôle | État actuel |
+|---|---|---|
+| `web/` | Interface Next.js App Router | Interface disponible, sans données métier |
+| `api/` | API NestJS et Prisma | Fichiers présents, sans implémentation ni manifeste npm |
+| `shared/` | Types et validateurs partagés | Fichiers présents, sans implémentation ni configuration de package |
+| `docs/` | Conception, contrats, suivi et briefs d’équipe | Documentation de travail |
 
-> Le dépôt est en phase **scaffold → MVP**. Les étapes ci-dessous décrivent la cible d’installation une fois le bootstrap Sprint 0 terminé.
+## Routes web
 
-### Prérequis
+| Route | État |
+|---|---|
+| `/` | Dashboard avec états vides, prêt pour les endpoints de rapport |
+| `/suppliers` | Annuaire vide, formulaire frontend sans persistance serveur |
+| `/products` | Catalogue vide, formulaire d’ajout sans persistance serveur |
+| `/settings` | États vides, prêt pour les données pharmacies |
+| `/inventory`, `/pos`, `/reports`, `/users` | Navigation et états vides ; modules métier à implémenter |
+| `/login`, `/register` | Pages et formulaires présents ; authentification non connectée |
 
-- Node.js 20+
-- pnpm (recommandé) ou npm
-- Docker (PostgreSQL)
-- Git + accès SSH au repo privé `innotech-lab/PharmaOs`
+Les anciennes clés de démonstration du navigateur sont supprimées au premier chargement après cette mise à jour. Aucune donnée métier n’est actuellement chargée ou persistée par le frontend. Le bouton de déconnexion nettoie les clés de jetons PharmaOS prévues et renvoie vers `/login` ; il n’existe pas encore de session authentifiée à révoquer côté serveur.
 
-### Clone
-
-```bash
-git clone git@github-pharmaos:innotech-lab/PharmaOs.git
-cd PharmaOs
-```
-
-> Si vous n’utilisez pas l’alias SSH `github-pharmaos`, adaptez le remote / la clé selon votre config.
-
-### Variables d’environnement
-
-```bash
-cp api/.env.example api/.env
-cp web/.env.example web/.env
-```
-
-| Service | Port par défaut |
-|---------|-----------------|
-| Web | `http://localhost:3000` |
-| API | `http://localhost:3001` |
-| Postgres | `localhost:5432` · DB `pharmaos` |
-
-### Lancer (cible)
-
-```bash
-# 1. Base de données
-docker compose up -d
-
-# 2. Dépendances (monorepo)
-pnpm install
-
-# 3. Migrations + seed
-cd api && pnpm prisma migrate dev && pnpm prisma db seed
-
-# 4. API
-pnpm start:dev
-
-# 5. Web (autre terminal)
-cd web && pnpm dev
-```
-
----
-
-## Roadmap MVP
-
-| Sprint | Objectif | Statut |
-|--------|----------|--------|
-| **0** | Monorepo, Prisma de base, Docker, UI kit, Git | En cours |
-| **1** | Auth, users, pharmacies, produits, stock API, fournisseurs | Planifié |
-| **2** | POS, inventaire UI, rapports, sécurité multi-tenant, seed démo | Planifié |
-| **3** | Tests critiques, polish UX, docs, release démo | Planifié |
-
-### Hors scope MVP (volontairement)
-
-Ordonnances avancées · tiers-payant · app mobile · microservices · transferts inter-sites
-
----
+Le logo officiel détouré est dans [`web/public/pharmaos-logo.png`](web/public/pharmaos-logo.png) et est affiché dans la navigation et les pages d’authentification.
 
 ## Équipe
 
-| Dev | Périmètre |
-|-----|-----------|
-| **Daniel** | Fondation, auth, users, sécurité multi-tenant |
-| **Stany** | Produits, inventaire, Docker Postgres |
-| **Dancile** | POS / ventes, rapports, Git & setup docs |
-| **Francis** | Pharmacies, fournisseurs, UI kit, seed & settings |
-
-Briefs détaillés : [`docs/team/`](./docs/team/)
-
----
-
-## Sécurité
-
-- Secrets uniquement via `.env` (jamais commités — voir `.gitignore`)
-- Scoping **tenant / pharmacy** sur chaque endpoint métier
-- Rôles minimaux : `OWNER` · `MANAGER` · `CASHIER`
-- Review pair obligatoire avant merge sur les tickets critiques
-
----
-
-## Contribution (équipe)
-
-1. Brancher depuis `develop` (ou `main` selon la convention d’équipe)  
-2. Nommer : `feature/AUTH-001-registration`, `fix/…`, `docs/…`  
-3. Respecter les contrats `shared/`  
-4. PR + review d’un autre développeur  
-5. Critères d’acceptation du brief = Definition of Done  
-
----
-
-## Licence
-
-**Proprietary** — © InnoTech Lab. Tous droits réservés.  
-Accès réservé aux collaborateurs autorisés du dépôt privé.
-
----
-
-<p align="center">
-  <strong>PharmaOS</strong> — Une pharmacie. Une plateforme. Le contrôle total.
-</p>
+Les responsabilités et critères d’acceptation sont définis dans [`docs/team/`](docs/team/). Avant de commencer un ticket, consulter le brief correspondant et mettre à jour [`docs/STATUS.md`](docs/STATUS.md) lors d’un changement de statut.
