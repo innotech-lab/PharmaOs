@@ -13,9 +13,9 @@ Mis à jour le 6 novembre 2026. Ce document décrit le dépôt tel qu’il est, 
 | Produits | Interface sans données | Catalogue vide ; ajout de produits en mémoire, sans persistance serveur |
 | Paramètres pharmacie | États vides | En attente de l’API pharmacies |
 | Login / Register / Logout | Pages et action de déconnexion disponibles | Formulaires sans endpoint ; logout local redirige vers `/login`, sans session serveur |
-| API | Non initialisée | Fichiers présents mais vides ; pas de manifeste npm |
-| Prisma / PostgreSQL | Non initialisés | Schéma vide, pas de migrations ou de configuration Compose |
-| `shared/` | Non initialisé | Fichiers présents mais vides ; pas de package ou validateurs |
+| API | Fondation disponible | NestJS, validation globale, auth JWT et users tenant-scoped |
+| Prisma / PostgreSQL | Schéma et seed prêts | `Tenant`, `Pharmacy`, `User`, rôles MVP et seed admin ; migration à générer avec PostgreSQL |
+| `shared/` | Auth initialisée | Workspace TypeScript, types et validateurs Zod auth |
 | Tests automatisés | Non configurés | Aucun script de test dans le frontend |
 | Build de production | À valider | La compilation a commencé précédemment, mais le build complet n’a pas été confirmé |
 
@@ -25,7 +25,7 @@ Les noms de tickets et leurs critères détaillés restent dans les [briefs de l
 
 | Responsable | Périmètre | État dans le dépôt |
 |---|---|---|
-| Daniel | Monorepo, auth, users, isolation tenant, Prisma de base | À implémenter ; les sources API et le schéma sont vides |
+| Daniel | Monorepo, auth, users, isolation tenant, Prisma de base | Implémenté ; revue croisée et branchement des modules métier restent à faire |
 | Stany | Docker/PostgreSQL, produits, inventaire | À implémenter ; sources API/UI métier et Compose absents ou vides |
 | Dancile | POS, ventes, rapports, workflow Git/setup | POS et rapports UI sont des états vides ; aucun flux de vente ni API |
 | Francis | UI kit, pharmacies, fournisseurs, settings, seed, QA | Shell et états vides disponibles ; contrats/API/seed/checklist restent à faire |
@@ -46,9 +46,9 @@ Les noms de tickets et leurs critères détaillés restent dans les [briefs de l
 
 ## Prochaines dépendances bloquantes
 
-1. Initialiser les manifests et configurations du monorepo, API et `shared`.
+1. Ajouter les migrations Prisma au dépôt après validation de PostgreSQL par Stany.
 2. Valider les contrats métier ouverts dans [`CONTRACTS.md`](CONTRACTS.md).
-3. Implémenter et migrer les modèles Tenant, User et Pharmacy avec Daniel.
+3. Brancher les modules métier sur `AuthGuard` et les scopes `tenantId` / `pharmacyId`.
 4. Connecter le client web aux endpoints authentifiés et scoper chaque requête.
 5. Ajouter un seed backend explicite pour le scénario de démonstration, sans réintroduire de fixtures dans l’interface.
-6. Rejouer le scénario et compléter la checklist QA lorsque les flux API existent.
+6. Rejouer le scénario auth et compléter la checklist QA avec Dancile.

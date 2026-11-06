@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  CASHIER
+}
+
+model Tenant {
+  id        String     @id @default(cuid())
+  name      String
+  createdAt DateTime   @default(now())
+  users     User[]
+  pharmacies Pharmacy[]
+}
+
+model Pharmacy {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  country   String?
+  city      String?
+  address   String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users     User[]
+  @@index([tenantId])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String
+  pharmacyId   String?
+  firstName    String
+  lastName     String
+  email        String
+  passwordHash String
+  role         Role     @default(CASHIER)
+  refreshHash  String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pharmacy     Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
+  @@unique([tenantId, email])
+  @@index([tenantId, pharmacyId])
+}

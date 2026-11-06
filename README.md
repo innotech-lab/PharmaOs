@@ -2,16 +2,20 @@
 
 PharmaOS est une plateforme de gestion d’officine : produits, stock, ventes, fournisseurs, équipe et pilotage multi-pharmacies.
 
-> **État actuel : interface web sans données métier.** Le frontend fonctionne en local. L’API NestJS, Prisma, la base de données et les contrats partagés sont encore des squelettes vides. Les écrans et formulaires sont prêts à être branchés ; les créations de produits/fournisseurs restent temporaires en mémoire. L’authentification n’est pas connectée. L’application n’est pas prête pour des données réelles.
+> **État actuel : fondation API/auth disponible.** Le frontend et l’API NestJS sont démarrables séparément. L’authentification, l’inscription multi-tenant, Prisma et le CRUD utilisateurs sont implémentés ; les modules métier restent à brancher.
 
-## Démarrer l’interface
+## Démarrer le monorepo
 
 Prérequis : Node.js 20.9 ou plus récent et npm.
 
 ```powershell
-cd web
-npm ci
-npm run dev
+npm install
+copy api\.env.example api\.env
+npm --workspace api run prisma:generate
+npm --workspace api run prisma:migrate -- --name init
+npm --workspace api run prisma:seed
+npm run dev:api
+npm run dev:web
 ```
 
 Ouvrir [http://localhost:3000](http://localhost:3000). Aucun compte ni serveur API n’est requis pour parcourir la démo.
@@ -25,7 +29,7 @@ npm run build      # compilation de production
 npm run start      # serveur de production après le build
 ```
 
-`web/.env.example` indique l’URL API prévue (`NEXT_PUBLIC_API_URL`). Le client API n’est pas encore implémenté ; cette variable n’est donc pas requise pour la démo actuelle.
+`web/.env.example` indique l’URL API (`NEXT_PUBLIC_API_URL`). Le compte seed local est `admin@pharmaos.local` avec le mot de passe `ChangeMe123!`; remplacez `SEED_ADMIN_PASSWORD` avant tout usage partagé.
 
 ## Documentation
 

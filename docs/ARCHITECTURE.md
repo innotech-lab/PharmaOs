@@ -15,6 +15,8 @@ flowchart LR
 
 Les traits pointillés signalent une intégration attendue, pas une intégration en place.
 
+L’API NestJS écoute sur `:3001`. `PrismaService` est la porte d’accès à PostgreSQL. L’identité JWT contient `sub`, `tenantId`, `pharmacyId` et `role`; le `AuthGuard` la place dans `request.user`. Les cookies HttpOnly sont utilisés par le web.
+
 ## État réellement implémenté
 
 ```mermaid
@@ -25,7 +27,7 @@ flowchart LR
   S[shared : fichiers vides]
 ```
 
-Le frontend est le seul composant exécutable actuellement configuré. `api/` ne contient pas de `package.json`, et les fichiers source API, le schéma Prisma, ainsi que les fichiers source de `shared/` sont vides. Il n’y a ni migration, ni seed, ni compose Docker, ni client HTTP fonctionnel.
+Le frontend et le socle API sont configurés. `api/prisma/schema.prisma` contient les modèles `Tenant`, `Pharmacy` et `User` avec rôles `OWNER`, `MANAGER`, `CASHIER`; `api/prisma/seed.ts` fournit un compte local rejouable. Les migrations sont générées localement par Prisma après disponibilité de PostgreSQL. Les modules métier restent indépendants de ce socle.
 
 ## Frontend
 
@@ -45,13 +47,13 @@ Le menu de pharmacie est vide jusqu’au branchement des données pharmacies. La
 
 ## API et persistance prévues
 
-Les répertoires `api/src/modules/` contiennent des emplacements pour auth, users, tenants, pharmacies, products, inventory, sales, suppliers et reports. Ces fichiers ne sont pas encore implémentés. Le fichier `api/prisma/schema.prisma` est vide. Les conventions d’API, endpoints, erreurs et pagination devront être précisées après le bootstrap.
+Les répertoires `api/src/modules/` contiennent les emplacements métier. `auth` et `users` sont implémentés ; les autres modules attendent leurs contrats et services respectifs. Les erreurs de validation sont rejetées par `ValidationPipe` avec whitelist globale.
 
 La cible décrite par les briefs utilise PostgreSQL et Prisma. Redis est explicitement hors du chemin critique MVP.
 
 ## Contrats partagés
 
-Les dossiers `shared/types/` et `shared/validators/` contiennent les fichiers prévus pour les contrats auth, pharmacy, user, supplier, product, inventory, sale et report. Ils sont actuellement vides et ne sont pas publiés comme package. Une fois initialisés, ils doivent devenir la source unique des types et validateurs utilisés par l’API et le frontend.
+`shared/` est un workspace TypeScript avec Zod. Les types et validateurs auth sont la première source partagée ; les contrats métier seront ajoutés par les responsables de leurs modules.
 
 ## Sécurité et isolation cible
 
@@ -59,6 +61,6 @@ Les dossiers `shared/types/` et `shared/validators/` contiennent les fichiers pr
 - Les stocks, ventes et autres données d’exploitation sont également rattachés à une pharmacie.
 - Le serveur doit appliquer l’isolation ; masquer des données dans l’interface ne constitue pas un contrôle d’accès.
 - Rôles MVP des briefs : `OWNER`, `MANAGER`, `CASHIER`.
-- L’authentification, les guards et les contrôles d’accès sont à implémenter avant l’usage de données réelles.
+- L’authentification, le guard JWT et le contrôle OWNER pour la gestion des utilisateurs sont implémentés. Le scoping des modules métier doit être ajouté avant l’usage de données réelles.
 
 Voir [`CONTRACTS.md`](CONTRACTS.md) pour les champs métier attendus et les décisions encore ouvertes.

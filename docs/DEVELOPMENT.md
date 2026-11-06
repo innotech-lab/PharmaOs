@@ -7,20 +7,25 @@ Ce guide décrit comment contribuer à l’état actuel du dépôt. Les procédu
 - Node.js 20.9 ou plus récent
 - npm
 - Git
+- PostgreSQL 15+ accessible via `api/.env` (`DATABASE_URL`)
 
 ```powershell
-cd web
-npm ci
-npm run dev
+npm install
+copy api\.env.example api\.env
+npm --workspace api run prisma:generate
+npm --workspace api run prisma:migrate -- --name init
+npm --workspace api run prisma:seed
+npm run dev:api
+npm run dev:web
 ```
 
-Le serveur web écoute sur le port `3000`. Pour vérifier les types :
+Le serveur web écoute sur le port `3000` et l’API sur `3001`. Pour vérifier les types :
 
 ```powershell
 npm run typecheck
 ```
 
-`npm run build` et `npm run start` sont disponibles dans `web/package.json`. Il n’existe pas encore de commande racine, de workspace npm/pnpm, de manifeste dans `api/` ou de manifeste dans `shared/`.
+`npm run build` et `npm run typecheck` à la racine vérifient `shared`, `api` et `web`.
 
 ## Où intervenir
 
@@ -33,9 +38,10 @@ npm run typecheck
 | Logo PharmaOS détouré (PNG transparent) | `web/public/pharmaos-logo.png` |
 | Fournisseurs et états vides des modules | `web/components/module-page.tsx` |
 | Pages et feuilles de style | `web/app/` |
-| Client HTTP (à implémenter) | `web/lib/api.ts` |
-| Modules métier API (squelettes) | `api/src/modules/` |
-| Contrats partagés (squelettes) | `shared/types/` et `shared/validators/` |
+| Client HTTP et auth UI | `web/lib/api.ts`, `web/app/(auth)/` |
+| Auth, guard et users API | `api/src/modules/auth/`, `api/src/modules/users/` |
+| Prisma et seed | `api/prisma/` |
+| Contrats partagés | `shared/types/` et `shared/validators/` |
 | Critères par responsable | `docs/team/<NOM>.md` |
 
 Les styles globaux sont actuellement regroupés dans `web/app/styles.css`. Les nouveaux éléments d’interface doivent réutiliser les composants, couleurs et rayons définis ici plutôt que créer une variation isolée.
@@ -58,7 +64,11 @@ La branche active observée lors de la rédaction est `main`. Aucun nom de branc
 - Le dashboard, les notifications, l’annuaire et les paramètres affichent des états vides jusqu’au branchement de l’API.
 - Les formulaires `/login` et `/register` n’appellent aucun endpoint. Le bouton « Se déconnecter » nettoie les clés locales de jetons prévues et ouvre `/login`; la révocation côté serveur reste à intégrer avec l’API d’authentification.
 
-Les données de développement futures doivent provenir d’un seed backend documenté et rejouable ; elles ne remplacent ni une base de données de test isolée ni une authentification.
+Le seed backend crée `PharmaOS Demo`, `Pharmacie Demo` et `admin@pharmaos.local`. Le mot de passe provient de `SEED_ADMIN_PASSWORD` et ne doit jamais être utilisé en production.
+
+### Contrat d’authentification
+
+`POST /auth/register` crée atomiquement un tenant, sa première pharmacie et son OWNER. `POST /auth/login` et `POST /auth/refresh` posent des cookies HttpOnly ; `POST /auth/logout` révoque le refresh token. `GET /users` et `POST /users` filtrent toujours par le `tenantId` du JWT ; seul `OWNER` peut créer un `MANAGER` ou un `CASHIER`.
 
 ## Secrets et configuration
 

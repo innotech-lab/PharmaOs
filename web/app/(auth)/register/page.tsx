@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AnimatedLogo } from "../../../components/animated-logo";
+import { authApi } from "../../../lib/api";
+import { useRouter } from "next/navigation";
 
 const steps = [
   { title: "Faisons connaissance", description: "Vous serez administrateur de votre officine." },
@@ -17,6 +19,7 @@ export default function RegisterPage() {
   const [message, setMessage] = useState("");
   const [animationKey, setAnimationKey] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
+  const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   const update = (field: keyof typeof details) => (event: React.ChangeEvent<HTMLInputElement>) => setDetails(current => ({ ...current, [field]: event.target.value }));
@@ -32,7 +35,7 @@ export default function RegisterPage() {
       return;
     }
     setAnimationKey(key => key + 1);
-    setMessage("La création d’organisation sera disponible dès que l’API sera activée.");
+    authApi.register(details).then(() => { router.push("/"); router.refresh(); }).catch(error => setMessage(error instanceof Error ? error.message : "Création impossible"));
   }
 
   return <main className="login-page">

@@ -3,17 +3,20 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AnimatedLogo } from "../../../components/animated-logo";
+import { authApi } from "../../../lib/api";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [animationKey, setAnimationKey] = useState(0);
+  const router = useRouter();
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAnimationKey(key => key + 1);
-    setMessage("La connexion sera disponible dès que l’API d’authentification sera activée.");
+    try { await authApi.login({ email, password }); router.push("/"); router.refresh(); } catch (error) { setMessage(error instanceof Error ? error.message : "Connexion impossible"); }
   }
 
   return <main className="login-page">
