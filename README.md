@@ -240,3 +240,13 @@ Accès réservé aux collaborateurs autorisés du dépôt privé.
 <p align="center">
   <strong>PharmaOS</strong> — Une pharmacie. Une plateforme. Le contrôle total.
 </p>
+
+## Caisse et rapports (Dancile)
+
+- `GET /sales/catalog?search=para` recherche les produits de démonstration par nom ou identifiant, sans tenir compte des accents.
+- `POST /sales` valide un checkout, calcule le prix et la TVA côté serveur, puis renvoie un reçu avec le détail de la vente.
+- `POST /sales/:id/cancel` annule une vente et restitue le stock; une seconde annulation est refusée.
+- `GET /reports/dashboard?pharmacyId=...` renvoie le chiffre d’affaires du jour, le nombre de ventes, le top 5 produits et les articles sous seuil.
+- `npm test` lance les tests de ventes et de rapports.
+
+Le parcours de caisse utilise encore un catalogue et un stockage en mémoire : les ventes et stocks de démonstration sont perdus au redémarrage. Les pages `/pos` et `/reports` du frontend sont présentes, mais leur parcours interactif n’est pas encore relié à ces endpoints. Le flux de vente n’est pas encore raccordé à Prisma; le scoping d’authentification/tenant et la transaction DB restent à réaliser.
