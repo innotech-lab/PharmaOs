@@ -5,6 +5,7 @@ import { AnimatedLogo } from "./animated-logo";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "./icons";
+import { authApi } from "../lib/api";
 
 const links = [
   { label: "Vue d’ensemble", href: "/", icon: "dashboard" as const },
@@ -65,9 +66,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     window.dispatchEvent(new CustomEvent("pharmaos:pharmacy-change", { detail: name }));
   }
 
-  function logout() {
-    ["pharmaos:access-token", "pharmaos:refresh-token"].forEach(key => localStorage.removeItem(key));
-    window.location.assign("/login");
+  async function logout() {
+    try { await authApi.logout(); } finally { ["pharmaos:access-token", "pharmaos:refresh-token"].forEach(key => localStorage.removeItem(key)); window.location.assign("/login"); }
   }
 
   return <div className="app-shell">

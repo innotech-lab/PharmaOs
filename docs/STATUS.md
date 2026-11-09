@@ -1,6 +1,6 @@
 # État du projet
 
-Mis à jour le 6 novembre 2026. Ce document décrit le dépôt tel qu’il est, pas uniquement la cible des briefs.
+Mis à jour le 9 novembre 2026. Ce document décrit le dépôt tel qu’il est, pas uniquement la cible des briefs.
 
 ## Vue d’ensemble
 
@@ -12,12 +12,12 @@ Mis à jour le 6 novembre 2026. Ce document décrit le dépôt tel qu’il est, 
 | Fournisseurs | Interface sans données | Liste vide ; formulaire frontend sans persistance serveur |
 | Produits | Interface sans données | Catalogue vide ; ajout de produits en mémoire, sans persistance serveur |
 | Paramètres pharmacie | États vides | En attente de l’API pharmacies |
-| Login / Register / Logout | Pages et action de déconnexion disponibles | Formulaires sans endpoint ; logout local redirige vers `/login`, sans session serveur |
+| Login / Register / Logout | Branchés à l’API | Cookies HttpOnly, hash refresh persisté/roté, révocation et suppression des cookies au logout |
 | API | Fondation disponible | NestJS, validation globale, auth JWT et users tenant-scoped |
-| Prisma / PostgreSQL | Schéma et seed prêts | `Tenant`, `Pharmacy`, `User`, rôles MVP et seed admin ; migration à générer avec PostgreSQL |
-| `shared/` | Auth initialisée | Workspace TypeScript, types et validateurs Zod auth |
-| Tests automatisés | Non configurés | Aucun script de test dans le frontend |
-| Build de production | À valider | La compilation a commencé précédemment, mais le build complet n’a pas été confirmé |
+| Prisma / PostgreSQL | Schéma et seed prêts | `Tenant`, `Pharmacy`, `User`, rôles MVP, migration initiale et seed admin |
+| `shared/` | Auth/users initialisés | Workspace TypeScript, types et validateurs Zod réutilisés par l’API et le web |
+| Tests automatisés | API configurée | `npm --workspace api test` couvre refresh, rôles et isolation tenant |
+| Build de production | Validé | `npm run typecheck`, `npm run build` et `npm ci --dry-run` passent |
 
 ## Livrables par responsable
 
@@ -41,8 +41,8 @@ Les noms de tickets et leurs critères détaillés restent dans les [briefs de l
 | `/inventory` | État vide | Niveaux, ajustements et historique selon le brief Stany |
 | `/pos` | État vide | Checkout transactionnel selon le brief Dancile |
 | `/reports` | État vide | Rapports API/UI et widgets liés aux ventes |
-| `/users` | État vide | CRUD/invitations protégés selon le brief Daniel |
-| `/login`, `/register` | Pages/formulaires ; déconnexion accessible depuis la navigation | Auth API, session serveur, validation partagée et protection des routes |
+| `/users` | Liste et invitation branchées à l’API | Création, modification, suppression, rôles et états d’erreur/chargement |
+| `/login`, `/register` | Pages/formulaires branchés | Auth API, session serveur, validation partagée et protection des routes |
 
 ## Prochaines dépendances bloquantes
 
