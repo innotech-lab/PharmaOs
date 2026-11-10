@@ -42,6 +42,7 @@
 input:not([type=checkbox]):not([type=radio]),select,textarea{min-height:44px}
 :where(a,button,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #168b7380;outline-offset:2px}
 .search-box input:focus-visible{outline:0}
+@media(max-width:900px){.inventory-layout{grid-template-columns:1fr}}
 @media(max-width:540px){
   .notification-popover{position:fixed;top:66px;left:12px;right:12px;width:auto;max-width:400px;margin-inline:auto}
   .product-form>label:nth-child(1),.product-form>label:nth-child(2){grid-column:span 1}
@@ -140,3 +141,5 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{min-height:44px}
 .register-transition-logo{display:block;height:92px;width:92px}
 .register-transition-logo .logo-trace{animation:logo-draw .8s ease-in-out both}
 .register-transition-logo .logo-pixels,.register-transition-logo .logo-fade{animation:logo-appear .8s ease both}
+.product-error{background:#fff1ef;border:1px solid #f2d3ce;border-radius:7px;color:#a9473a;font-size:11px;margin:10px 0;padding:10px 12px}.product-row-actions{display:flex;gap:5px}.product-row-actions button{background:#fff;border:1px solid #e5ebe8;border-radius:5px;color:#53645d;font-size:9px;padding:5px 7px}.product-row-actions button:hover{border-color:#84c9b4;color:#168b73}.inventory-kpis{margin-bottom:15px}.inventory-layout{display:grid;gap:15px;grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr)}.inventory-adjust{padding:18px}.inventory-adjust h2{font-size:14px;margin:8px 0}.inventory-adjust>p{color:#89958f;font-size:10px;line-height:1.6}.inventory-adjust form{display:flex;flex-direction:column;margin-top:15px}.inventory-adjust form .button{align-self:flex-start;margin-top:3px}.inventory-history{margin-top:15px}
+.stock-alert-label{color:#b65a39;display:block;font-size:8px;font-weight:700;margin-top:3px}.dashboard-stock-error{background:#fff1ef;border-radius:6px;color:#a9473a;font-size:10px;line-height:1.5;padding:10px}
