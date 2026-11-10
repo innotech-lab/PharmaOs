@@ -7,11 +7,14 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "typecheck": "tsc --noEmit",
+    "test:inventory": "npm run build && node --test test/inventory.service.test.cjs",
+    "test:inventory-api": "node test/inventory-api.smoke.cjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@pharmaos/shared": "file:../shared",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
