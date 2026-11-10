@@ -19,6 +19,8 @@ model Tenant {
   createdAt DateTime   @default(now())
   users     User[]
   pharmacies Pharmacy[]
+  products   Product[]
+  stockMovements StockMovement[]
 }
 
 model Pharmacy {
@@ -32,7 +34,64 @@ model Pharmacy {
   createdAt DateTime @default(now())
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   users     User[]
+  products  Product[]
+  stock     StockLevel[]
+  stockMovements StockMovement[]
   @@index([tenantId])
+}
+
+model Product {
+  id             String   @id @default(cuid())
+  tenantId       String
+  pharmacyId     String
+  sku            String
+  name           String
+  // Montant unitaire hors taxe ; la devise est celle configurée pour l’officine.
+  priceHT        Decimal  @db.Decimal(12, 2)
+  tvaRate        Decimal  @db.Decimal(5, 2)
+  stockThreshold Int      @default(0)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pharmacy       Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  stock          StockLevel?
+  movements      StockMovement[]
+  @@unique([pharmacyId, sku])
+  @@index([tenantId, pharmacyId, active])
+}
+
+model StockLevel {
+  id        String   @id @default(cuid())
+  pharmacyId String
+  productId String  @unique
+  quantity  Int      @default(0)
+  updatedAt DateTime @updatedAt
+  pharmacy  Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model StockMovement {
+  id          String   @id @default(cuid())
+  tenantId    String
+  pharmacyId  String
+  productId   String
+  type        StockMovementType
+  quantity    Int
+  reason      String?
+  reference   String?
+  createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pharmacy    Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@index([tenantId, pharmacyId, createdAt])
+  @@index([productId, createdAt])
+}
+
+enum StockMovementType {
+  IN
+  OUT
+  ADJUST
 }
 
 model User {
