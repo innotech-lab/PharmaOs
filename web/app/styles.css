@@ -140,3 +140,34 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{min-height:44px}
 .register-transition-logo{display:block;height:92px;width:92px}
 .register-transition-logo .logo-trace{animation:logo-draw .8s ease-in-out both}
 .register-transition-logo .logo-pixels,.register-transition-logo .logo-fade{animation:logo-appear .8s ease both}
+
+.error-page{align-items:center;background:radial-gradient(ellipse at 50% 0%,#e5f3ed,transparent 52%),#f5f8f6;display:flex;flex-direction:column;justify-content:center;min-height:100vh;padding:24px}
+.error-card{align-items:center;background:#fff;border:1px solid #e5eeea;border-radius:18px;box-shadow:0 20px 60px #173d2e0d;display:flex;flex-direction:column;max-width:480px;padding:48px 36px;text-align:center;width:100%}
+.error-logo{height:90px;margin-bottom:28px;width:90px}
+.error-code{color:#168b73;font-size:11px;font-weight:700;letter-spacing:1.5px}
+.error-card h1{color:#172b39;font-family:Manrope,'DM Sans',sans-serif;font-size:27px;letter-spacing:-.8px;margin:12px 0}
+.error-card p{color:#62776d;font-size:14px;line-height:1.6;margin:0;max-width:320px}
+.error-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:28px}
+.error-primary,.error-secondary{align-items:center;border:1px solid transparent;border-radius:9px;display:inline-flex;font-size:13px;font-weight:700;justify-content:center;min-height:46px;padding:0 18px}
+.error-primary{background:#11745f;color:#fff}.error-primary:hover{background:#0d624f}.error-secondary{background:#f5f8f6;border-color:#e1ebe5;color:#466357}
+.error-brand{color:#234349;font-family:Manrope,sans-serif;font-size:13px;font-weight:800;margin-top:24px}.error-brand span{color:#1eac7c}
+.error-not-found .logo-trace{animation:error-search 3.2s ease-in-out infinite}
+.error-timeout .logo-trace{animation:none}
+.error-timeout .logo-trace-main{animation:error-timeout-upper 3.8s ease-in-out infinite}
+.error-timeout .logo-trace-cross{animation:error-timeout-lower 3.8s ease-in-out infinite}
+.error-timeout .logo-pixels{animation:error-timeout-pixels 3.8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.error-error .logo-trace{animation:none;stroke:#c64e50}
+.error-error .logo-fade{stroke:#e99994}
+.error-error .logo-pixels{animation:error-signal 1.45s ease-in-out infinite;fill:#c64e50;transform-box:fill-box;transform-origin:center}
+.error-error .animated-logo{animation:error-heartbeat 1.45s ease-in-out infinite;transform-origin:center}
+.error-not-found .logo-pixels{animation:error-pixels 3.2s ease-in-out infinite}
+@keyframes error-search{0%,100%{stroke-dashoffset:0}45%,60%{stroke-dashoffset:.28}}
+@keyframes error-timeout-upper{0%,15%,100%{opacity:1}45%,65%{opacity:.18}}
+@keyframes error-timeout-lower{0%,15%,100%{opacity:.18}45%,65%{opacity:1}}
+@keyframes error-timeout-pixels{0%,25%{opacity:1;transform:translateY(0)}55%,78%{opacity:.25;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes error-heartbeat{0%,25%,100%{transform:scale(1)}6%{transform:scale(1.08)}12%{transform:scale(1)}18%{transform:scale(1.055)}}
+@keyframes error-signal{0%,25%,100%{opacity:1;transform:scale(1)}6%{opacity:.6;transform:scale(.9)}12%{opacity:1;transform:scale(1)}18%{opacity:.75;transform:scale(.94)}}
+@keyframes error-pixels{0%,100%{opacity:1}45%,60%{opacity:.3}}
+@media(max-width:540px){.error-card{padding:38px 24px}.error-card h1{font-size:23px}}
+@media(prefers-reduced-motion:reduce){.error-error .animated-logo,.error-error .logo-pixels{animation:none!important}}
+.top-profile{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600}.top-profile span{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:540px){.top-profile span{max-width:90px}}
