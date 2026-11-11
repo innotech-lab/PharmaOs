@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Icon } from "./icons";
+import { catalogue, type ProductRecord } from "../lib/catalogue";
 
-type Product = { name: string; sku: string; unitPrice: string; vatRate: string; stockThreshold: string; active: boolean };
+type Product = ProductRecord;
 const blankProduct: Product = { name: "", sku: "", unitPrice: "", vatRate: "", stockThreshold: "", active: true };
 
 export function ProductsPage() {
@@ -11,11 +12,14 @@ export function ProductsPage() {
   const [query, setQuery] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<Product>(blankProduct);
+  useEffect(() => { setProducts(catalogue.products()); }, []);
   const filtered = useMemo(() => products.filter(product => `${product.name} ${product.sku}`.toLowerCase().includes(query.trim().toLowerCase())), [products, query]);
 
   function addProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setProducts(current => [{ ...form }, ...current]);
+    const next = [form, ...products.filter(product => product.sku !== form.sku)];
+    setProducts(next);
+    catalogue.saveProducts(next);
     setForm(blankProduct);
     setModalOpen(false);
   }

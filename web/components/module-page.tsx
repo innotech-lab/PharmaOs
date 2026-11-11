@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Icon } from "./icons";
+import { catalogue, type SupplierRecord } from "../lib/catalogue";
 
-type Supplier = { name: string; email: string; phone: string; category: string; active: boolean };
+type Supplier = SupplierRecord;
 const config: Record<string, { title: string; description: string; icon: "box" | "stock" | "cart" | "supplier" | "chart" | "users"; action?: string }> = {
   products: { title: "Catalogue produits", description: "Retrouvez et gérez les produits de votre officine.", icon: "box" },
   inventory: { title: "Inventaire", description: "Suivez les niveaux de stock et anticipez les réapprovisionnements.", icon: "stock" },
@@ -21,17 +22,18 @@ export function ModulePage({ module }: { module: keyof typeof config }) {
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState<Supplier>({ name: "", email: "", phone: "", category: "Grossiste répartiteur", active: true });
+  useEffect(() => { if (module === "suppliers") setSuppliers(catalogue.suppliers()); }, [module]);
   const filtered = useMemo(() => suppliers.filter(s => `${s.name} ${s.email} ${s.category}`.toLowerCase().includes(query.toLowerCase()) && (filter === "all" || (filter === "active" ? s.active : s.category === filter))), [suppliers, query, filter]);
   function saveSupplier(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const next = [...suppliers];
     if (editing === null) next.unshift(form); else next[editing] = form;
-    setSuppliers(next); setModal(false); setEditing(null);
+    setSuppliers(next); catalogue.saveSuppliers(next); setModal(false); setEditing(null);
     setForm({ name: "", email: "", phone: "", category: "Grossiste répartiteur", active: true });
   }
   function editSupplier(index: number) { setForm({ ...suppliers[index] }); setEditing(index); setModal(true); }
   function deleteSupplier(index: number) {
-    const next = suppliers.filter((_, i) => i !== index); setSuppliers(next);
+    const next = suppliers.filter((_, i) => i !== index); setSuppliers(next); catalogue.saveSuppliers(next);
   }
   return <>
     <div className="page-heading"><div><div className="title-kicker"><span className="live-dot"/> GESTION DE L’OFFICINE</div><h1>{module === "suppliers" ? "Vos partenaires" : info.title}</h1><p>{module === "suppliers" ? "Gardez vos partenaires d’approvisionnement à portée de main." : info.description}</p></div>{info.action && <button className="button button-primary" onClick={() => { if (module === "suppliers") { setEditing(null); setForm({ name: "", email: "", phone: "", category: "Grossiste répartiteur", active: true }); setModal(true); } else setModal(true); }}><Icon name="plus" size={17}/>{info.action}</button>}</div>
