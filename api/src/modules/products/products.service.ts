@@ -32,7 +32,7 @@ export class ProductsService {
   async create(tenantId: string, pharmacyId: string, input: unknown) {
     pharmacyId = await this.assertPharmacy(tenantId, pharmacyId);
     const data = parseProductInput(input) as {
-      sku: string; name: string; priceHT: number; tvaRate: number;
+      sku: string; name: string; category: string | null; priceHT: number; tvaRate: number;
       stockThreshold: number; active: boolean;
     };
     try {

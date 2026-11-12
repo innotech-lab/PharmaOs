@@ -3,6 +3,8 @@ import { z } from 'zod';
 export const createProductSchema = z.object({
   sku: z.string().trim().min(1).max(64),
   name: z.string().trim().min(1).max(160),
+  // Facultative : un produit sans catégorie apparaît dans l'onglet « Sans catégorie ».
+  category: z.string().trim().max(60).nullish().transform(value => value || null),
   priceHT: z.number().finite().nonnegative(),
   tvaRate: z.number().finite().min(0).max(100),
   stockThreshold: z.number().int().nonnegative(),

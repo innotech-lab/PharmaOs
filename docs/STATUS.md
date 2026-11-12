@@ -1,23 +1,27 @@
 # État du projet
 
-Mis à jour le 6 novembre 2026. Ce document décrit le dépôt tel qu’il est, pas uniquement la cible des briefs.
+Mis à jour le 12 novembre 2026. Ce document décrit le dépôt tel qu’il est maintenant.
 
 ## Vue d’ensemble
 
 | Domaine | État | Détail |
 |---|---|---|
-| Web | Démo locale | Next.js 15 / React 19 ; `npm run typecheck` passe |
-| Dashboard | Interface sans données | Indicateurs vides ; en attente des endpoints de rapport et de stock |
-| Navigation et responsive | Interface disponible | Menu, recherche de pages, notifications vides, menu pharmacie vide |
-| Fournisseurs | Interface sans données | Liste vide ; formulaire frontend sans persistance serveur |
-| Produits | Interface sans données | Catalogue vide ; ajout de produits en mémoire, sans persistance serveur |
-| Paramètres pharmacie | États vides | En attente de l’API pharmacies |
-| Login / Register / Logout | Pages et action de déconnexion disponibles | Formulaires sans endpoint ; logout local redirige vers `/login`, sans session serveur |
-| API | Fondation disponible | NestJS, validation globale, auth JWT et users tenant-scoped |
-| Prisma / PostgreSQL | Schéma et seed prêts | `Tenant`, `Pharmacy`, `User`, rôles MVP et seed admin ; migration à générer avec PostgreSQL |
-| `shared/` | Auth initialisée | Workspace TypeScript, types et validateurs Zod auth |
-| Tests automatisés | Non configurés | Aucun script de test dans le frontend |
-| Build de production | À valider | La compilation a commencé précédemment, mais le build complet n’a pas été confirmé |
+| Web | Application connectée | Next.js 15 / React 19 ; espace de travail et pages d’authentification branchés sur l’API |
+| Dashboard | Données réelles | Liste de démarrage, indicateurs et alertes de stock |
+| Navigation et responsive | Disponible | Menu, recherche de pages et alertes de stock par pharmacie |
+| Fournisseurs | Branché | CRUD persistant, recherche, filtres et compteurs |
+| Produits | Branché | Catalogue persistant, catégories, prix et statut |
+| Inventaire | Branché | Niveaux, ajustements et mouvements de stock |
+| Point de vente | Branché | Encaissement transactionnel, tickets et annulation avec remise en stock |
+| Rapports | Branché | Résumé des ventes, comparaison de période et produits les plus vendus |
+| Équipe | Branché | Membres tenant-scoped ; mot de passe temporaire imposé à la première connexion |
+| Paramètres pharmacie | Disponible | Informations de la pharmacie liées au compte |
+| Login / Register / Logout | Branché | Session JWT, inscription et connexion ; changement obligatoire du mot de passe temporaire |
+| API | Modules métier actifs | NestJS, validation partagée Zod, AuthGuard, portées tenant et pharmacie |
+| Prisma / PostgreSQL | Schéma et migrations présents | Modèles tenant, pharmacies, utilisateurs, produits, stock, fournisseurs et ventes |
+| `shared/` | Contrats partagés | Types, calculs métier et validateurs Zod |
+| Tests automatisés | Tests de services disponibles | Tests d’inventaire, fournisseurs, ventes et catégories de produits |
+| Build de production | À valider | La compilation de production reste à confirmer séparément des vérifications TypeScript |
 
 ## Livrables par responsable
 
@@ -25,30 +29,29 @@ Les noms de tickets et leurs critères détaillés restent dans les [briefs de l
 
 | Responsable | Périmètre | État dans le dépôt |
 |---|---|---|
-| Daniel | Monorepo, auth, users, isolation tenant, Prisma de base | Implémenté ; revue croisée et branchement des modules métier restent à faire |
-| Stany | Docker/PostgreSQL, produits, inventaire | À implémenter ; sources API/UI métier et Compose absents ou vides |
-| Dancile | POS, ventes, rapports, workflow Git/setup | POS et rapports UI sont des états vides ; aucun flux de vente ni API |
-| Francis | UI kit, pharmacies, fournisseurs, settings, seed, QA | Shell et états vides disponibles ; contrats/API/seed/checklist restent à faire |
+| Daniel | Monorepo, auth, users, isolation tenant, Prisma de base | Authentification et équipe implémentées ; changement de mot de passe temporaire ajouté |
+| Stany | Docker/PostgreSQL, produits, inventaire | Produits avec catégorie et inventaire branchés à PostgreSQL |
+| Dancile | POS, ventes, rapports, workflow Git/setup | Point de vente et rapports branchés ; numéros de tickets propres à chaque pharmacie |
+| Francis | UI kit, pharmacies, fournisseurs, settings, seed, QA | UI kit et modules fournisseurs/settings branchés ; documentation actualisée |
 
 ## Routes frontend
 
 | Route | Comportement actuel | Suite nécessaire |
 |---|---|---|
-| `/` | Dashboard vide | Brancher les endpoints de rapports et de stock |
-| `/suppliers` | Liste vide, recherche, filtre et formulaire frontend | API CRUD tenant-scoped et contrats partagés |
-| `/settings` | États vides | API pharmacies et propagation de la pharmacie active au client API |
-| `/products` | Liste vide et formulaire d’ajout en mémoire | CRUD API, validation partagée, édition/désactivation selon le brief Stany |
-| `/inventory` | État vide | Niveaux, ajustements et historique selon le brief Stany |
-| `/pos` | État vide | Checkout transactionnel selon le brief Dancile |
-| `/reports` | État vide | Rapports API/UI et widgets liés aux ventes |
-| `/users` | État vide | CRUD/invitations protégés selon le brief Daniel |
-| `/login`, `/register` | Pages/formulaires ; déconnexion accessible depuis la navigation | Auth API, session serveur, validation partagée et protection des routes |
+| `/` | Dashboard avec données de stock et ventes | Suivre l’usage et compléter les indicateurs selon les besoins métier |
+| `/suppliers` | Fournisseurs persistés avec ajout, modification, suppression et compteurs | Aucun blocage fonctionnel identifié |
+| `/settings` | Informations de l’officine | Gestion multi-pharmacies si le besoin est confirmé |
+| `/products` | Catalogue connecté, catégorie, création et gestion des produits | Seuil d’alerte par défaut en attente d’une décision métier |
+| `/inventory` | Niveaux, ajustements, historique et accès aux produits actifs | Aucun blocage fonctionnel identifié |
+| `/pos` | Panier, taxes, paiement, rendu monnaie, ticket et annulation | Aucun blocage fonctionnel identifié |
+| `/reports` | Résumé sur 7 ou 30 jours et produits les plus vendus | Aucun blocage fonctionnel identifié |
+| `/users` | Équipe et ajout de membres avec mot de passe temporaire | Invitation par e-mail en attente d’une décision |
+| `/login`, `/register` | Authentification, pays proposés et visibilité du mot de passe | Mot de passe oublié en attente d’une décision et d’un canal d’assistance |
+| `/change-password` | Changement obligatoire du mot de passe temporaire | Aucun blocage fonctionnel identifié |
 
 ## Prochaines dépendances bloquantes
 
-1. Ajouter les migrations Prisma au dépôt après validation de PostgreSQL par Stany.
-2. Valider les contrats métier ouverts dans [`CONTRACTS.md`](CONTRACTS.md).
-3. Brancher les modules métier sur `AuthGuard` et les scopes `tenantId` / `pharmacyId`.
-4. Connecter le client web aux endpoints authentifiés et scoper chaque requête.
-5. Ajouter un seed backend explicite pour le scénario de démonstration, sans réintroduire de fixtures dans l’interface.
-6. Rejouer le scénario auth et compléter la checklist QA avec Dancile.
+1. Choisir le seuil de stock par défaut pour un nouveau produit.
+2. Décider du parcours « Mot de passe oublié » et du canal d’assistance associé.
+3. Décider si les invitations par e-mail sont nécessaires.
+4. Terminer la QA visuelle des parcours connectés et vérifier la build de production.

@@ -1,22 +1,32 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
-import { Icon } from "../../../components/icons";
-import { authApi, type CurrentUser } from "../../../lib/api";
+import { LoadingRows, PageHeader } from "../../../components/ui";
+import { CURRENCY, ROLE_LABELS } from "../../../lib/format";
+import { useCurrentUser } from "../../../lib/session";
 
 export default function SettingsPage() {
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    let active = true;
-    authApi.me().then(value => { if (active) setUser(value); }).catch(() => { if (active) setError("Impossible de charger les informations de l’officine."); });
-    return () => { active = false; };
-  }, []);
+  const user = useCurrentUser();
   const pharmacy = user?.pharmacy;
   return <>
-    <div className="page-heading"><div><div className="title-kicker"><span className="live-dot"/> ORGANISATION</div><h1>Paramètres</h1></div></div>
-    {error && <p role="alert">{error}</p>}
-    <div className="settings-layout"><section className="panel settings-panel"><div className="settings-section-title"><div className="settings-section-icon"><Icon name="pin"/></div><div><h2>Pharmacies</h2></div></div><div className="settings-empty"><Icon name="supplier" size={22}/><p>{pharmacy ? pharmacy.name : user ? "Aucune pharmacie liée à ce compte" : "Chargement…"}</p></div></section>
-    <section className="panel settings-panel details-panel"><div className="settings-section-title"><div className="settings-section-icon"><Icon name="settings"/></div><div><h2>Informations de l’officine</h2></div></div><div className="settings-empty"><Icon name="pin" size={22}/>{pharmacy ? <><b>{pharmacy.name}</b><p>{[pharmacy.city, pharmacy.country].filter(Boolean).join(", ") || "Adresse non renseignée"}</p></> : <p>{user ? "Aucune pharmacie liée à ce compte" : "Chargement…"}</p>}</div></section></div>
+    <PageHeader title="Paramètres" subtitle="L’officine active et votre compte"/>
+    <div className="ph-grid-half">
+      <section className="ph-card" aria-labelledby="pharmacy-title">
+        <div className="ph-card-head"><h2 className="ph-card-title" id="pharmacy-title">Officine</h2></div>
+        {!user ? <LoadingRows rows={3}/> : pharmacy ? <dl className="ph-totals">
+          <div><dt>Nom</dt><dd>{pharmacy.name}</dd></div>
+          <div><dt>Ville</dt><dd>{pharmacy.city || "Non renseignée"}</dd></div>
+          <div><dt>Pays</dt><dd>{pharmacy.country || "Non renseigné"}</dd></div>
+          <div><dt>Devise</dt><dd>Franc burundais ({CURRENCY})</dd></div>
+        </dl> : <p className="ph-hint">Aucune pharmacie liée à ce compte</p>}
+      </section>
+      <section className="ph-card" aria-labelledby="account-title">
+        <div className="ph-card-head"><h2 className="ph-card-title" id="account-title">Votre compte</h2></div>
+        {!user ? <LoadingRows rows={3}/> : <dl className="ph-totals">
+          <div><dt>Nom</dt><dd>{user.firstName} {user.lastName}</dd></div>
+          <div><dt>Adresse e-mail</dt><dd>{user.email}</dd></div>
+          <div><dt>Rôle</dt><dd>{ROLE_LABELS[user.role] ?? user.role}</dd></div>
+        </dl>}
+      </section>
+    </div>
   </>;
 }

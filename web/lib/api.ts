@@ -19,5 +19,5 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return response.json();
 }
-export type CurrentUser = { id: string; firstName: string; lastName: string; email: string; role: string; pharmacy: { id: string; name: string; city: string | null; country: string | null } | null };
-export const authApi = { login: (data: { email: string; password: string }) => api('/auth/login', { method: 'POST', body: JSON.stringify(data) }), register: (data: Record<string, string>) => api('/auth/register', { method: 'POST', body: JSON.stringify(data) }), me: () => api<CurrentUser>('/auth/me'), logout: () => api('/auth/logout', { method: 'POST' }) };
+export type CurrentUser = { id: string; firstName: string; lastName: string; email: string; role: string; mustChangePassword: boolean; pharmacy: { id: string; name: string; city: string | null; country: string | null } | null };
+export const authApi = { login: (data: { email: string; password: string }) => api('/auth/login', { method: 'POST', body: JSON.stringify(data) }), register: (data: Record<string, string>) => api('/auth/register', { method: 'POST', body: JSON.stringify(data) }), changePassword: (data: { currentPassword: string; newPassword: string }) => api('/auth/change-password', { method: 'POST', body: JSON.stringify(data) }), me: () => api<CurrentUser>('/auth/me'), logout: () => api('/auth/logout', { method: 'POST' }) };

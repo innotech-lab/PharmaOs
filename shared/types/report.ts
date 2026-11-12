@@ -1,7 +1,17 @@
-import { z } from 'zod';
-import { dashboardMetricSchema, dashboardMetricsSchema, lowStockProductSchema, reportDashboardSchema } from '../validators/report';
+export type DayTotals = { revenueTTC: number; salesCount: number };
 
-export type DashboardMetric = z.infer<typeof dashboardMetricSchema>;
-export type DashboardMetrics = z.infer<typeof dashboardMetricsSchema>;
-export type LowStockProduct = z.infer<typeof lowStockProductSchema>;
-export type ReportDashboard = z.infer<typeof reportDashboardSchema>;
+export type ReportDay = DayTotals & { date: string };
+
+export type TopProduct = { productId: string; productName: string; quantity: number; revenueTTC: number };
+
+export type ReportSummary = {
+  timeZone: string;
+  days: number;
+  today: DayTotals;
+  yesterday: DayTotals;
+  period: DayTotals & { averageTTC: number };
+  previousPeriod: DayTotals;
+  daily: ReportDay[];
+  topProducts: TopProduct[];
+  lowStockCount: number;
+};

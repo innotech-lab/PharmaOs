@@ -1,2 +1,2 @@
-import { ModulePage } from "../../../components/module-page";
-export default function PosPage() { return <ModulePage module="pos"/>; }
+import { PosPage } from "../../../components/pos-page";
+export default function PosRoute() { return <PosPage/>; }

@@ -1,2 +1,2 @@
-import { ModulePage } from "../../../components/module-page";
-export default function SuppliersPage() { return <ModulePage module="suppliers"/>; }
+import { SuppliersPage } from "../../../components/suppliers-page";
+export default function SuppliersRoute() { return <SuppliersPage/>; }

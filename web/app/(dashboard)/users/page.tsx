@@ -1,45 +1,86 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, authApi } from "../../../lib/api";
+import { Icon } from "../../../components/icons";
+import { EmptyState, LoadingRows, Modal, Notice, PageHeader } from "../../../components/ui";
+import { api } from "../../../lib/api";
+import { initials, ROLE_LABELS } from "../../../lib/format";
+import { useCurrentUser } from "../../../lib/session";
 
 type User = { id: string; firstName: string; lastName: string; email: string; role: string; active: boolean };
 const empty = { firstName: "", lastName: "", email: "", password: "", role: "CASHIER" };
+const roleDescriptions: Record<string, string> = {
+  OWNER: "Gère l’officine, l’équipe et les annulations",
+  MANAGER: "Gère le catalogue, le stock et peut annuler une vente",
+  CASHIER: "Encaisse les ventes et consulte le stock",
+};
 
 export default function UsersPage() {
+  const me = useCurrentUser();
   const [users, setUsers] = useState<User[]>([]);
   const [form, setForm] = useState(empty);
-  const [owner, setOwner] = useState(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const owner = me?.role === "OWNER";
+
   useEffect(() => {
     let active = true;
-    Promise.all([api<User[]>("/users"), authApi.me()]).then(([data, me]) => { if (active) { setUsers(data); setOwner(me.role === "OWNER"); } }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
+    api<User[]>("/users").then(data => { if (active) setUsers(data); }).catch(cause => { if (active) setError(cause instanceof Error ? cause.message : "Chargement impossible"); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
+
   async function create(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccess("");
     try {
       const user = await api<User>("/users", { method: "POST", body: JSON.stringify(form) });
       setUsers(current => [...current, user]); setForm(empty); setOpen(false);
-    } catch (e) { setError(e instanceof Error ? e.message : "Création impossible"); }
+      setSuccess(`${user.firstName} ${user.lastName} a été ajouté comme ${ROLE_LABELS[user.role]?.toLowerCase() ?? user.role}. Transmettez-lui son mot de passe temporaire pour sa première connexion.`);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Création impossible"); }
     finally { setSaving(false); }
   }
+
   return <>
-    <div className="page-heading"><h1>Votre équipe</h1>{owner && <button className="button button-primary" onClick={() => setOpen(true)}>Ajouter un membre</button>}</div>
-    {error && <p role="alert">{error}</p>}
-    <section className="panel directory-panel"><div className="directory-head"><h2>Membres <span className="count-badge">{users.length}</span></h2></div>
-      {loading ? <p role="status">Chargement de l’équipe…</p> : users.length ? <div className="supplier-table-wrap"><table className="supplier-table"><thead><tr><th>NOM</th><th>ADRESSE E-MAIL</th><th>RÔLE</th><th>STATUT</th></tr></thead><tbody>{users.map(user => <tr key={user.id}><td>{user.firstName} {user.lastName}</td><td>{user.email}</td><td>{user.role}</td><td>{user.active ? "Actif" : "Inactif"}</td></tr>)}</tbody></table></div> : <div className="empty-state">Aucun membre trouvé.</div>}
+    <PageHeader title="Équipe" subtitle="Les personnes qui travaillent dans l’officine et ce que chacune peut faire">
+      {owner && <button className="ph-btn ph-btn-primary" onClick={() => { setError(""); setOpen(true); }}><Icon name="plus" size={16}/>Ajouter un membre</button>}
+    </PageHeader>
+    {error && !open && <Notice tone="error">{error}</Notice>}
+    {success && <Notice tone="success">{success}</Notice>}
+
+    <section className="ph-card ph-card-flush" aria-labelledby="team-title">
+      <div className="ph-card-head"><h2 className="ph-card-title" id="team-title">Membres</h2><p className="ph-card-meta">{loading ? "Chargement…" : `${users.length} personne${users.length > 1 ? "s" : ""}`}</p></div>
+      {loading ? <LoadingRows/> : users.length ? <div className="ph-table-wrap"><table className="ph-table">
+        <thead><tr><th>Nom</th><th className="ph-hide-sm">Adresse e-mail</th><th>Rôle</th><th className="ph-hide-sm">Statut</th></tr></thead>
+        <tbody>{users.map(user => <tr key={user.id}>
+          <td><span style={{ alignItems: "center", display: "flex", gap: 12 }}><span className="ph-avatar ph-avatar-round">{initials(`${user.firstName} ${user.lastName}`)}</span><span className="ph-cell-main"><b>{user.firstName} {user.lastName}{user.id === me?.id ? " (vous)" : ""}</b><small className="ph-show-sm">{user.email}</small></span></span></td>
+          <td className="ph-hide-sm">{user.email}</td>
+          <td><span className="ph-cell-main"><b>{ROLE_LABELS[user.role] ?? user.role}</b><small>{roleDescriptions[user.role]}</small></span></td>
+          <td className="ph-hide-sm"><span className={`ph-badge ${user.active ? "is-ok" : "is-muted"}`}>{user.active ? "Actif" : "Inactif"}</span></td>
+        </tr>)}</tbody>
+      </table></div> : <EmptyState icon="users" title="Aucun membre" text="Ajoutez les personnes qui encaissent ou gèrent le stock."/>}
     </section>
-    {open && <div className="modal-backdrop"><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="user-title"><h2 id="user-title">Ajouter un membre</h2><form className="supplier-form" onSubmit={create}>
-      <label>Prénom<input required value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })}/></label>
-      <label>Nom<input required value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })}/></label>
-      <label>Adresse e-mail<input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}/></label>
-      <label>Mot de passe initial<input required type="password" minLength={8} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}/></label>
-      <label>Rôle<select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}><option value="CASHIER">Caissier</option><option value="MANAGER">Manager</option></select></label>
-      <div className="modal-actions"><button type="button" className="button button-secondary" onClick={() => setOpen(false)}>Annuler</button><button className="button button-primary" disabled={saving}>{saving ? "Enregistrement…" : "Ajouter"}</button></div>
-    </form></section></div>}
+    {!owner && !loading && <p className="ph-hint">Seul le titulaire de l’officine peut ajouter un membre.</p>}
+
+    {open && <Modal title="Ajouter un membre" description="Le membre se connectera avec son adresse e-mail et le mot de passe initial que vous choisissez" onClose={() => setOpen(false)}>
+      <form className="ph-form" onSubmit={create}>
+        <div className="ph-form-row">
+          <label className="ph-field"><span>Prénom</span><input required autoFocus autoComplete="off" value={form.firstName} onChange={event => setForm({ ...form, firstName: event.target.value })}/></label>
+          <label className="ph-field"><span>Nom</span><input required autoComplete="off" value={form.lastName} onChange={event => setForm({ ...form, lastName: event.target.value })}/></label>
+        </div>
+        <label className="ph-field"><span>Adresse e-mail</span><input required type="email" autoComplete="off" value={form.email} onChange={event => setForm({ ...form, email: event.target.value })}/></label>
+        <label className="ph-field"><span>Mot de passe temporaire</span><input required type="password" autoComplete="new-password" minLength={8} value={form.password} onChange={event => setForm({ ...form, password: event.target.value })}/><span className="ph-hint">Le membre le changera à sa première connexion</span></label>
+        <fieldset className="ph-field" style={{ border: 0, margin: 0, padding: 0 }}>
+          <span>Rôle</span>
+          {(["CASHIER", "MANAGER"] as const).map(role => <label key={role} className="ph-switch" style={{ justifyContent: "flex-start" }}>
+            <input type="radio" name="role" value={role} checked={form.role === role} onChange={() => setForm({ ...form, role })}/>
+            <span className="ph-cell-main"><b>{ROLE_LABELS[role]}</b><small>{roleDescriptions[role]}</small></span>
+          </label>)}
+        </fieldset>
+        {error && <Notice tone="error">{error}</Notice>}
+        <div className="ph-form-actions"><button type="button" className="ph-btn ph-btn-secondary" onClick={() => setOpen(false)}>Annuler</button><button className="ph-btn ph-btn-primary" disabled={saving}>{saving ? "Enregistrement…" : "Ajouter le membre"}</button></div>
+      </form>
+    </Modal>}
   </>;
 }

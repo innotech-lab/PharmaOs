@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { AnimatedLogo } from "./animated-logo";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { InventoryLevel } from "@pharmaos/shared";
+import { AnimatedLogo } from "./animated-logo";
 import { Icon } from "./icons";
-import { authApi, type CurrentUser } from "../lib/api";
+import { api, authApi, type CurrentUser } from "../lib/api";
+import { initials, ROLE_LABELS } from "../lib/format";
+import { SessionContext } from "../lib/session";
 
 const links = [
   { label: "Vue d’ensemble", href: "/", icon: "dashboard" as const },
@@ -16,84 +19,132 @@ const links = [
   { label: "Rapports", href: "/reports", icon: "chart" as const },
   { label: "Équipe", href: "/users", icon: "users" as const },
 ];
+const allPages = [...links, { label: "Paramètres", href: "/settings", icon: "settings" as const }];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [pharmacy, setPharmacy] = useState("");
+  const router = useRouter();
   const [profile, setProfile] = useState<CurrentUser | null>(null);
   const [profileError, setProfileError] = useState("");
-  const [loggingOut, setLoggingOut] = useState(false);
-  const [pharmacyMenuOpen, setPharmacyMenuOpen] = useState(false);
+  const [lowStock, setLowStock] = useState<InventoryLevel[]>([]);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const unread = false;
-  const [date, setDate] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const searchWrapRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
-  const pharmacyRef = useRef<HTMLDivElement>(null);
-  const pharmacies = profile?.pharmacy ? [profile.pharmacy.name] : [];
-  const results = useMemo(() => links.filter(item => item.label.toLowerCase().includes(search.trim().toLowerCase())), [search]);
+  const results = useMemo(() => allPages.filter(item => item.label.toLowerCase().includes(search.trim().toLowerCase())), [search]);
+  const current = allPages.find(item => item.href === pathname);
 
   useEffect(() => {
     let active = true;
-    authApi.me().then(user => { if (active) { setProfile(user); setPharmacy(user.pharmacy?.name ?? ""); } }).catch(() => { if (active) setProfileError("Impossible de charger le compte."); });
-    setDate(new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date()));
+    authApi.me().then(user => { if (!active) return; setProfile(user); if (user.mustChangePassword && window.location.pathname !== "/change-password") router.replace("/change-password"); }).catch(() => { if (active) setProfileError("Compte indisponible"); });
     const cleanupMarker = "pharmaos:demo-data-removed-v1";
-    if (!localStorage.getItem(cleanupMarker)) {
-      ["pharmaos:suppliers", "pharmaos:pharmacies", "pharmaos:active-pharmacy"].forEach(key => localStorage.removeItem(key));
-      localStorage.setItem(cleanupMarker, "1");
-    }
-    const syncPharmacy = (event: Event) => setPharmacy((event as CustomEvent<string>).detail);
+    try {
+      if (!localStorage.getItem(cleanupMarker)) {
+        ["pharmaos:suppliers", "pharmaos:pharmacies", "pharmaos:active-pharmacy"].forEach(key => localStorage.removeItem(key));
+        localStorage.setItem(cleanupMarker, "1");
+      }
+    } catch { /* stockage local indisponible */ }
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setSearchOpen(true); searchRef.current?.focus(); }
-      if (event.key === "Escape") { setSearchOpen(false); setNotificationsOpen(false); setMobileOpen(false); setPharmacyMenuOpen(false); }
+      if (event.key === "Escape") { setSearchOpen(false); setNotificationsOpen(false); setMobileOpen(false); }
     };
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node;
       if (!searchWrapRef.current?.contains(target)) setSearchOpen(false);
       if (!notificationsRef.current?.contains(target)) setNotificationsOpen(false);
-      if (!pharmacyRef.current?.contains(target)) setPharmacyMenuOpen(false);
     };
-    window.addEventListener("pharmaos:pharmacy-change", syncPharmacy);
     window.addEventListener("keydown", onKeyDown);
     document.addEventListener("pointerdown", onPointerDown);
-    return () => { active = false; window.removeEventListener("pharmaos:pharmacy-change", syncPharmacy); window.removeEventListener("keydown", onKeyDown); document.removeEventListener("pointerdown", onPointerDown); };
+    return () => { active = false; window.removeEventListener("keydown", onKeyDown); document.removeEventListener("pointerdown", onPointerDown); };
   }, []);
 
-  useEffect(() => { if (searchOpen) searchRef.current?.focus(); }, [searchOpen]);
-
-  function changePharmacy(name: string) {
-    setPharmacy(name);
-    setPharmacyMenuOpen(false);
-    window.dispatchEvent(new CustomEvent("pharmaos:pharmacy-change", { detail: name }));
-  }
+  // Les alertes de stock se rafraîchissent à chaque changement de page (après une vente ou un ajustement).
+  useEffect(() => {
+    let active = true;
+    api<InventoryLevel[]>("/inventory/levels").then(levels => { if (active) setLowStock(levels.filter(level => level.lowStock)); }).catch(() => { /* alertes indisponibles */ });
+    setMobileOpen(false);
+    return () => { active = false; };
+  }, [pathname]);
 
   async function logout() {
-    setLoggingOut(true);
-    setProfileError("");
+    setLoggingOut(true); setProfileError("");
     try {
       await authApi.logout();
-      ["pharmaos:access-token", "pharmaos:refresh-token"].forEach(key => localStorage.removeItem(key));
+      try { ["pharmaos:access-token", "pharmaos:refresh-token"].forEach(key => localStorage.removeItem(key)); } catch { /* rien à nettoyer */ }
       window.location.assign("/login");
     } catch {
-      setProfileError("Déconnexion impossible. Vérifiez votre connexion et réessayez.");
+      setProfileError("Déconnexion impossible, réessayez");
       setLoggingOut(false);
     }
   }
 
-  return <div className="app-shell">
-    <aside id="dashboard-sidebar" className={`sidebar ${mobileOpen ? "sidebar-open" : ""}`}>
-      <Link className="brand" href="/" aria-label="PharmaOS — accueil" onClick={() => setMobileOpen(false)}><span className="brand-symbol"><AnimatedLogo /></span><span className="brand-name">Pharma<span>OS</span></span></Link>
-      <div className="workspace-label">OFFICINE ACTIVE</div>
-      <div className="pharmacy-menu-wrap" ref={pharmacyRef}><button className={`pharmacy-select ${pharmacyMenuOpen ? "pharmacy-select-open" : ""}`} type="button" aria-label="Choisir une pharmacie" aria-expanded={pharmacyMenuOpen} aria-haspopup="listbox" aria-controls="pharmacy-options" onClick={() => setPharmacyMenuOpen(open => !open)}><span className="pharmacy-avatar">{pharmacy ? pharmacy.split(" ").map(part => part[0]).slice(0, 2).join("") : "—"}</span><span className="pharmacy-name"><b>{pharmacy || "Aucune pharmacie"}</b><small>{pharmacy ? "Pharmacie active" : "Aucune officine liée"}</small></span><Icon name="chevron" className="select-chevron" size={16}/></button>{pharmacyMenuOpen && <div className="pharmacy-options" id="pharmacy-options" role="listbox" aria-label="Pharmacies disponibles">{pharmacies.length ? pharmacies.map(name => <button type="button" role="option" aria-selected={pharmacy === name} className={`pharmacy-option ${pharmacy === name ? "pharmacy-option-active" : ""}`} key={name} onClick={() => changePharmacy(name)}><span className="pharmacy-option-avatar">{name.split(" ").map(part => part[0]).slice(0, 2).join("")}</span><span className="pharmacy-option-copy"><b>{name}</b><small>{name === pharmacy ? "Pharmacie active" : "Changer pour cette pharmacie"}</small></span>{pharmacy === name && <Icon name="check" size={17}/>}</button>) : <p className="pharmacy-options-empty">Aucune pharmacie disponible</p>}</div>}</div>
-      <div className="nav-caption">MENU</div>
-      <nav className="nav-list">{links.map(link => <Link onClick={() => setMobileOpen(false)} className={`nav-link ${pathname === link.href ? "active" : ""}`} href={link.href} key={link.href}><Icon name={link.icon}/><span>{link.label}</span></Link>)}</nav>
-      <div className="sidebar-bottom"><div className="nav-caption">PRÉFÉRENCES</div><Link onClick={() => setMobileOpen(false)} className={`nav-link ${pathname === "/settings" ? "active" : ""}`} href="/settings"><Icon name="settings"/><span>Paramètres</span></Link><a className="help-link" href="mailto:support@pharmaos.fr">Assistance <Icon name="arrow" size={14}/></a><div className="profile"><div className="avatar">{profile ? `${profile.firstName[0] ?? ""}${profile.lastName[0] ?? ""}`.toUpperCase() : "..."}</div><span><b>{profile ? `${profile.firstName} ${profile.lastName}` : "Compte utilisateur"}</b><small>{profile ? profile.email : (profileError || "Chargement...")}</small></span></div><button className="logout-link" type="button" onClick={logout}><Icon name="logout" size={16}/><span>Se déconnecter</span></button></div>
-    </aside>
-    {mobileOpen && <button className="mobile-scrim" aria-label="Fermer le menu" onClick={() => setMobileOpen(false)} />}
-    <main className="main-area"><header className="topbar"><button className="icon-button mobile-menu" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"} aria-expanded={mobileOpen} aria-controls="dashboard-sidebar"><Icon name="menu"/></button><div className="breadcrumb"><span>PharmaOS</span><b>/</b><strong>{links.find(l => l.href === pathname)?.label || (pathname === "/settings" ? "Paramètres" : "Espace de travail")}</strong></div><div className="top-actions"><div ref={searchWrapRef} className={`search-box ${searchOpen ? "search-active" : ""}`} onClick={() => { if (!searchOpen) setSearchOpen(true); }}><Icon name="search" size={18}/><input ref={searchRef} placeholder="Rechercher dans le menu" value={search} onFocus={() => setSearchOpen(true)} onChange={e => setSearch(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && results[0]) window.location.href = results[0].href; }} aria-label="Rechercher une page"/><kbd>Ctrl K</kbd>{searchOpen && <div className="search-popover">{search.trim() ? results.length ? results.map(item => <Link href={item.href} key={item.href} onClick={() => { setSearchOpen(false); setSearch(""); }}><Icon name={item.icon} size={17}/><span>{item.label}</span><Icon name="arrow" size={14}/></Link>) : <p>Aucune page trouvée</p> : <p>Rechercher une page du menu</p>}</div>}</div><div className="notification-wrap" ref={notificationsRef}><button className={`icon-button notification-button ${notificationsOpen ? "notification-active" : ""}`} aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen(!notificationsOpen)}><Icon name="bell"/></button>{notificationsOpen && <section className="notification-popover" aria-label="Notifications"><div className="notification-head"><b>Notifications</b></div><p className="notification-empty">Aucune notification</p></section>}</div><div className="top-divider"/><div className="top-profile"><span>{profile ? `${profile.firstName} ${profile.lastName}` : "Compte utilisateur"}</span><div className="avatar avatar-small">{profile ? `${profile.firstName[0] ?? ""}${profile.lastName[0] ?? ""}`.toUpperCase() : "..."}</div></div></div></header><div className="page-content"><div className="page-eyebrow">{date}</div>{children}<footer>PharmaOS <span>•</span> Gestion d’officine</footer></div></main>
-  </div>;
+  const pharmacy = profile?.pharmacy;
+  const fullName = profile ? `${profile.firstName} ${profile.lastName}` : "Compte";
+
+  return <SessionContext.Provider value={profile}>
+    <div className="ph-app">
+      <aside id="ph-sidebar" className={`ph-sidebar ${mobileOpen ? "is-open" : ""}`}>
+        <Link className="ph-brand" href="/" aria-label="PharmaOS, vue d’ensemble"><span className="ph-brand-mark"><AnimatedLogo /></span><span className="ph-brand-name">Pharma<span>OS</span></span></Link>
+
+        <div className="ph-pharmacy">
+          <div className="ph-pharmacy-button" aria-disabled="true" title={pharmacy ? "Pharmacie active" : undefined}>
+            <span className="ph-avatar">{pharmacy ? initials(pharmacy.name) : "—"}</span>
+            <span className="ph-pharmacy-copy"><b>{pharmacy?.name ?? (profile ? "Aucune pharmacie" : "Chargement…")}</b><small>{pharmacy ? [pharmacy.city, pharmacy.country].filter(Boolean).join(", ") || "Pharmacie active" : "Aucune officine liée"}</small></span>
+          </div>
+        </div>
+
+        <nav className="ph-nav-group" aria-label="Menu principal">
+          <p className="ph-nav-label">Officine</p>
+          {links.map(link => <Link key={link.href} href={link.href} className={`ph-nav-link ${pathname === link.href ? "is-active" : ""}`} aria-current={pathname === link.href ? "page" : undefined}>
+            <Icon name={link.icon} size={18}/><span>{link.label}</span>
+            {link.href === "/inventory" && lowStock.length > 0 && <span className="ph-nav-count" aria-label={`${lowStock.length} produits sous le seuil`}>{lowStock.length}</span>}
+          </Link>)}
+        </nav>
+
+        <div className="ph-sidebar-foot">
+          <Link href="/settings" className={`ph-nav-link ${pathname === "/settings" ? "is-active" : ""}`}><Icon name="settings" size={18}/><span>Paramètres</span></Link>
+          <a className="ph-nav-link" href="mailto:support@pharmaos.fr"><Icon name="arrow" size={18}/><span>Assistance</span></a>
+          <div className="ph-profile">
+            <span className="ph-avatar ph-avatar-round">{profile ? initials(fullName) : "…"}</span>
+            <span className="ph-profile-copy"><b>{fullName}</b><small>{profileError || (profile ? ROLE_LABELS[profile.role] ?? profile.role : "Chargement…")}</small></span>
+          </div>
+          <button className="ph-nav-link ph-nav-button" type="button" onClick={logout} disabled={loggingOut}><Icon name="logout" size={18}/><span>{loggingOut ? "Déconnexion…" : "Se déconnecter"}</span></button>
+        </div>
+      </aside>
+      {mobileOpen && <button className="ph-mobile-scrim" aria-label="Fermer le menu" onClick={() => setMobileOpen(false)}/>}
+
+      <div className="ph-main">
+        <header className="ph-topbar">
+          <button className="ph-icon-btn ph-menu-btn" type="button" onClick={() => setMobileOpen(open => !open)} aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"} aria-expanded={mobileOpen} aria-controls="ph-sidebar"><Icon name="menu" size={18}/></button>
+          <div className="ph-crumbs"><span>{pharmacy?.name ?? "PharmaOS"}</span><Icon name="chevron" size={14} style={{ transform: "rotate(-90deg)" }}/><strong>{current?.label ?? "Espace de travail"}</strong></div>
+          <div className="ph-top-actions">
+            <div className="ph-search" ref={searchWrapRef}>
+              <label className="ph-search-field" onClick={() => setSearchOpen(true)}>
+                <Icon name="search" size={16}/>
+                <input ref={searchRef} placeholder="Aller à une page" value={search} onFocus={() => setSearchOpen(true)} onChange={event => setSearch(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && results[0]) { router.push(results[0].href); setSearch(""); setSearchOpen(false); } }} aria-label="Aller à une page"/>
+                <kbd className="ph-kbd">Ctrl K</kbd>
+              </label>
+              {searchOpen && <div className="ph-popover" role="listbox" aria-label="Pages">{results.length ? results.map(item => <Link className="ph-popover-item" href={item.href} key={item.href} onClick={() => { setSearchOpen(false); setSearch(""); }}><Icon name={item.icon} size={16}/><span>{item.label}</span></Link>) : <p className="ph-popover-empty">Aucune page trouvée</p>}</div>}
+            </div>
+            <div className="ph-search" ref={notificationsRef}>
+              <button className="ph-icon-btn" type="button" aria-label={lowStock.length ? `Alertes de stock : ${lowStock.length}` : "Alertes de stock"} aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen(open => !open)}><Icon name="bell" size={18}/>{lowStock.length > 0 && <span className="ph-dot" aria-hidden="true"/>}</button>
+              {notificationsOpen && <section className="ph-popover" aria-label="Alertes de stock">
+                <p className="ph-popover-title">{lowStock.length ? `${lowStock.length} produit${lowStock.length > 1 ? "s" : ""} sous le seuil` : "Alertes de stock"}</p>
+                {lowStock.length ? lowStock.slice(0, 6).map(level => <Link className="ph-popover-item" key={level.productId} href={`/inventory?product=${level.productId}`} onClick={() => setNotificationsOpen(false)}><span className="ph-cell-main"><b>{level.productName}</b></span><small className="ph-num">{level.quantity} / seuil {level.stockThreshold}</small></Link>) : <p className="ph-popover-empty">Tous les produits sont au-dessus de leur seuil</p>}
+                {lowStock.length > 6 && <Link className="ph-popover-item" href="/inventory" onClick={() => setNotificationsOpen(false)}><span className="ph-link">Voir les {lowStock.length} alertes</span></Link>}
+              </section>}
+            </div>
+          </div>
+        </header>
+        <main className="ph-content">
+          {children}
+          <footer className="ph-footer">PharmaOS · Gestion d’officine</footer>
+        </main>
+      </div>
+    </div>
+  </SessionContext.Provider>;
 }
