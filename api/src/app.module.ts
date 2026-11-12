@@ -8,6 +8,8 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { AppController } from './app.controller';
+import { HealthModule } from './modules/health/health.module';
 
-@Module({ imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, UsersModule, ProductsModule, InventoryModule, SuppliersModule, SalesModule, ReportsModule], providers: [PrismaService] })
+@Module({ imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, UsersModule, ProductsModule, InventoryModule, SuppliersModule, SalesModule, ReportsModule, HealthModule], controllers: [AppController], providers: [PrismaService] })
 export class AppModule {}

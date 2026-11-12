@@ -1,6 +1,7 @@
 {
   "name": "pharmaos",
+  "version": "1.0.0",
   "private": true,
   "workspaces": ["api", "web", "shared"],
-  "scripts": { "dev:web": "npm --workspace web run dev", "dev:api": "npm --workspace api run start:dev", "build": "npm --workspace shared run build && npm --workspace api run build && npm --workspace web run build", "typecheck": "npm --workspace shared run build && npm --workspace api run typecheck && npm --workspace web run typecheck" }
+  "scripts": { "dev:web": "npm --workspace web run dev", "dev:api": "npm --workspace api run start:dev", "build": "npm --workspace shared run build && npm --workspace api run build && npm --workspace web run build", "typecheck": "npm --workspace shared run build && npm --workspace api run typecheck && npm --workspace web run typecheck", "test": "npm --workspace shared run build && npm --workspace api test" }
 }
